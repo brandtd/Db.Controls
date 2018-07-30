@@ -15,12 +15,39 @@
         <ItemsControl ItemsSource="{Binding Source={StaticResource drones}}" HorizontalAlignment="Center" VerticalAlignment="Center">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <UniformGrid Rows="2">
+                    <UniformGrid Rows="11">
                         <Label Content="Round Trip:" Margin="0,0,3,0" />
                         <Label Content="{Binding RoundTripTime}" />
 
                         <Label Content="RSSI (dBm):" Margin="0,0,3,0" />
                         <Label Content="{Binding RssiInDbMilliWatts}" />
+
+                        <Label Content="Hardware Version:" Margin="0,0,3,0" />
+                        <Label Content="{Binding HardwareVersion}" />
+
+                        <Label Content="Software Version:" Margin="0,0,3,0" />
+                        <Label Content="{Binding SoftwareVersion}" />
+
+                        <Label Content="Product Name:" Margin="0,0,3,0" />
+                        <Label Content="{Binding ProductName}" />
+
+                        <Label Content="Serial Number:" Margin="0,0,3,0" />
+                        <Label Content="{Binding SerialNumber}" />
+
+                        <Label Content="Outdoor WiFi:" Margin="0,0,3,0" />
+                        <Label Content="{Binding OutdoorWifi}" />
+
+                        <Label Content="Roll:" Margin="0,0,3,0" />
+                        <Label Content="{Binding Roll}" />
+
+                        <Label Content="Pitch:" Margin="0,0,3,0" />
+                        <Label Content="{Binding Pitch}" />
+
+                        <Label Content="Yaw:" Margin="0,0,3,0" />
+                        <Label Content="{Binding Yaw}" />
+
+                        <Label Content="Altitude:" Margin="0,0,3,0" />
+                        <Label Content="{Binding Altitude}" />
                     </UniformGrid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

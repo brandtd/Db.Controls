@@ -24,6 +24,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Windows.Threading;
 
 namespace AR.App
 {
@@ -57,26 +58,29 @@ namespace AR.App
 
         private void onDroneListChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            if (e.OldItems != null)
+            App.Current.Dispatcher.Invoke(() =>
             {
-                foreach (IARDrone drone in e.OldItems.Cast<IARDrone>())
+                if (e.OldItems != null)
                 {
-                    DroneViewModel viewModel = Drones.FirstOrDefault(vm => vm.Model == drone);
-                    if (viewModel != null)
+                    foreach (IARDrone drone in e.OldItems.Cast<IARDrone>())
                     {
-                        Drones.Remove(viewModel);
-                        viewModel.Dispose();
+                        DroneViewModel viewModel = Drones.FirstOrDefault(vm => vm.Model == drone);
+                        if (viewModel != null)
+                        {
+                            Drones.Remove(viewModel);
+                            viewModel.Dispose();
+                        }
                     }
                 }
-            }
 
-            if (e.NewItems != null)
-            {
-                foreach (IARDrone drone in e.NewItems.Cast<IARDrone>())
+                if (e.NewItems != null)
                 {
-                    Drones.Add(new DroneViewModel(drone));
+                    foreach (IARDrone drone in e.NewItems.Cast<IARDrone>())
+                    {
+                        Drones.Add(new DroneViewModel(drone));
+                    }
                 }
-            }
+            });
         }
     }
 }

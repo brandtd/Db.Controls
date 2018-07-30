@@ -45,7 +45,7 @@ namespace AR.Drone
             _listener.ServiceLost += onServiceLost;
             _listener.Error += onServiceError;
 
-            ARBebop drone = new ARBebop(_codec);
+            /*ARBebop drone = new ARBebop(_codec);
             drone.Connect(IPAddress.Parse("192.168.42.1"), 44444).ContinueWith(
                 t =>
                 {
@@ -53,7 +53,7 @@ namespace AR.Drone
                     {
                         Drones.Add(drone);
                     }
-                }, TaskScheduler.FromCurrentSynchronizationContext());
+                }, TaskScheduler.FromCurrentSynchronizationContext());*/
         }
 
         /// <summary>Discovered/connected drones.</summary>
