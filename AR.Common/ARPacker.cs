@@ -16,6 +16,28 @@ namespace AR.Common
             return append(buffer, ref index, bytes);
         }
 
+        public static bool Append(byte[] buffer, ref int index, byte value)
+        {
+            if (buffer.Length - index >= 1)
+            {
+                buffer[index++] = value;
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool Append(byte[] buffer, ref int index, sbyte value)
+        {
+            if (buffer.Length - index >= 1)
+            {
+                buffer[index++] = (byte)value;
+                return true;
+            }
+
+            return false;
+        }
+
         public static bool Append(byte[] buffer, ref int index, short value)
         {
             byte[] bytes = BitConverter.GetBytes(value);

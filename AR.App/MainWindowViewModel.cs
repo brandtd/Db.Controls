@@ -21,7 +21,9 @@
 
 using AR.Drone;
 using System;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Linq;
 
 namespace AR.App
 {
@@ -31,13 +33,14 @@ namespace AR.App
         {
             _droneNetwork = new ARNetwork();
             ((INotifyCollectionChanged)_droneNetwork.Drones).CollectionChanged += onDroneListChanged;
+
+            foreach (IARDrone drone in _droneNetwork.Drones)
+            {
+                Drones.Add(new DroneViewModel(drone));
+            }
         }
 
-        public string DisplayString
-        {
-            get => _displayString;
-            set => SetProperty(ref _displayString, value);
-        }
+        public ObservableCollection<DroneViewModel> Drones { get; } = new ObservableCollection<DroneViewModel>();
 
         /// <inheritdoc cref="IDisposable.Dispose" />
         public void Dispose()
@@ -50,12 +53,30 @@ namespace AR.App
             }
         }
 
-        private string _displayString = "Searching ...";
         private ARNetwork _droneNetwork;
 
         private void onDroneListChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            _displayString = $"Num drones: {_droneNetwork.Drones.Count}";
+            if (e.OldItems != null)
+            {
+                foreach (IARDrone drone in e.OldItems.Cast<IARDrone>())
+                {
+                    DroneViewModel viewModel = Drones.FirstOrDefault(vm => vm.Model == drone);
+                    if (viewModel != null)
+                    {
+                        Drones.Remove(viewModel);
+                        viewModel.Dispose();
+                    }
+                }
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (IARDrone drone in e.NewItems.Cast<IARDrone>())
+                {
+                    Drones.Add(new DroneViewModel(drone));
+                }
+            }
         }
     }
 }

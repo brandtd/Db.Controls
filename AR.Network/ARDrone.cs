@@ -1,6 +1,8 @@
 ﻿using AR.Commands;
+using ARParrot.Commands.Common.CommonState;
 using Newtonsoft.Json;
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -9,9 +11,17 @@ using System.Threading.Tasks;
 
 namespace AR.Drone
 {
-    public abstract class ARDrone : IDisposable
+    /// <summary>Base implementation of a drone.</summary>
+    public abstract class ARDrone : IARDrone, IDisposable
     {
+        /// <inheritdoc cref="IARDrone.Address" />
         public IPAddress Address { get; private set; }
+
+        /// <inheritdoc cref="IARDrone.RoundTripTime" />
+        public TimeSpan RoundTripTime { get; private set; }
+
+        /// <inheritdoc cref="IARDrone.RssiInDbMilliWatts" />
+        public short RssiInDbMilliWatts { get; private set; }
 
         /// <summary>Connect with drone at given address/port.</summary>
         public virtual async Task<string> Connect(IPAddress address, ushort port)
@@ -20,7 +30,7 @@ namespace AR.Drone
             byte[] responseBuffer = new byte[1024];
 
             TcpClient tcpClient = new TcpClient();
-            UdpClient udpClient = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+            _client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
 
             try
             {
@@ -31,7 +41,7 @@ namespace AR.Drone
                 {
                     ControllerName = System.AppDomain.CurrentDomain.FriendlyName,
                     ControllerType = "PC",
-                    D2cPort = (udpClient.Client.LocalEndPoint as IPEndPoint).Port,
+                    D2cPort = (_client.Client.LocalEndPoint as IPEndPoint).Port,
                 }));
                 await stream.WriteAsync(request, 0, request.Length);
                 int read = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length);
@@ -43,6 +53,10 @@ namespace AR.Drone
                     if (response.Status != 0)
                     {
                         error = $"Status error: {response.Status}";
+                    }
+                    else
+                    {
+                        _remoteEndPoint = new IPEndPoint(address, response.C2dPort);
                     }
                 }
             }
@@ -61,13 +75,14 @@ namespace AR.Drone
             if (error == string.Empty)
             {
                 Address = address;
-                _client = udpClient;
                 _cts = new CancellationTokenSource();
-                _receiveTask = receiveContinuousAsync(_cts.Token);
+                _receiveTask = receiveContinuousAsync();
+                _pingTask = pingTask();
             }
             else
             {
-                udpClient.Dispose();
+                _client.Dispose();
+                _client = null;
             }
             tcpClient.Dispose();
 
@@ -97,9 +112,11 @@ namespace AR.Drone
         private readonly ARCommandCodec _codec;
         private UdpClient _client;
         private CancellationTokenSource _cts;
+        private Task _pingTask;
         private Task _receiveTask;
+        private IPEndPoint _remoteEndPoint;
 
-        private async Task handleIfAckRequested(ARFrame frame, IPEndPoint remoteEndpoint)
+        private async Task handleIfAckRequested(ARFrame frame)
         {
             // 'Ack' the data, if requested.
             if (frame.Type == ARFrame.DataType.DataWithAck)
@@ -112,7 +129,7 @@ namespace AR.Drone
                     Data = new byte[] { frame.SequenceNumber },
                 }.Encode();
 
-                await _client.SendAsync(response, response.Length, remoteEndpoint);
+                await _client.SendAsync(response, response.Length, _remoteEndPoint);
             }
         }
 
@@ -126,18 +143,21 @@ namespace AR.Drone
                 ARCommand command = _codec.Decode(frame.Data, ref dataIndex);
                 if (command != null)
                 {
-                    Console.WriteLine($"Received command of type: {command.GetType()}");
+                    if (command is CmdWifiSignalChanged wifiSignalStatus)
+                    {
+                        RssiInDbMilliWatts = wifiSignalStatus.Rssi;
+                    }
                 }
             }
 
             return Task.CompletedTask;
         }
 
-        private async Task handleIfHeartbeat(ARFrame frame, IPEndPoint remoteEndpoint)
+        private async Task handleIfHeartbeat(ARFrame frame)
         {
-            // Data sent to the '0' should be bounced back immediately so ping can be measured.
             if (frame.TargetBuffer == 0)
             {
+                // Data sent to the '0' should be bounced back immediately so ping can be measured.
                 byte[] response = new ARFrame
                 {
                     Type = ARFrame.DataType.Data,
@@ -146,17 +166,61 @@ namespace AR.Drone
                     Data = frame.Data,
                 }.Encode();
 
-                await _client.SendAsync(response, response.Length, remoteEndpoint);
+                await _client.SendAsync(response, response.Length, _remoteEndPoint);
 
-                Console.WriteLine("Bounced back packet");
+                Console.WriteLine($"Bounced back packet (Seq: {frame.SequenceNumber})");
+            }
+            else if (frame.TargetBuffer == 1)
+            {
+                // Data received in buffer '1' is our timestamp bounced back to us.
+                long currentTime = Stopwatch.GetTimestamp();
+                long sentTime = BitConverter.ToInt64(frame.Data, 0);
+
+                long numTicks = currentTime - sentTime;
+                RoundTripTime = TimeSpan.FromSeconds(numTicks / (double)Stopwatch.Frequency);
             }
         }
 
-        private async Task receiveContinuousAsync(CancellationToken token)
+        private async Task pingTask()
         {
-            while (!token.IsCancellationRequested)
+            try
             {
-                try
+                while (!_cts.IsCancellationRequested)
+                {
+                    long sendTime = Stopwatch.GetTimestamp();
+                    ARFrame frame = new ARFrame
+                    {
+                        Data = BitConverter.GetBytes(sendTime),
+                        SequenceNumber = ARFrame.NextSequenceNumber(0),
+                        TargetBuffer = 0,
+                        Type = ARFrame.DataType.Data,
+                    };
+                    byte[] data = frame.Encode();
+                    await _client.SendAsync(data, data.Length, _remoteEndPoint);
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected exception: {ex.Message}");
+                if (Debugger.IsAttached)
+                {
+                    Debugger.Break();
+                }
+            }
+        }
+
+        private async Task receiveContinuousAsync()
+        {
+            try
+            {
+                while (!_cts.Token.IsCancellationRequested)
                 {
                     UdpReceiveResult result = await _client.ReceiveAsync();
 
@@ -167,8 +231,8 @@ namespace AR.Drone
 
                         if (frame != null)
                         {
-                            await handleIfHeartbeat(frame, result.RemoteEndPoint);
-                            await handleIfAckRequested(frame, result.RemoteEndPoint);
+                            await handleIfHeartbeat(frame);
+                            await handleIfAckRequested(frame);
                             await handleIfCommandTypeReceived(frame);
                         }
                         else
@@ -177,11 +241,19 @@ namespace AR.Drone
                         }
                     }
                 }
-                catch (ObjectDisposedException)
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected exception: {ex.Message}");
+                if (Debugger.IsAttached)
                 {
-                }
-                catch (OperationCanceledException)
-                {
+                    Debugger.Break();
                 }
             }
         }

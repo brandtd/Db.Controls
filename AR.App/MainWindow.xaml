@@ -6,7 +6,24 @@
         xmlns:local="clr-namespace:AR.App"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
+    <Window.Resources>
+        <ResourceDictionary>
+            <CollectionViewSource Source="{Binding Drones}" x:Key="drones" />
+        </ResourceDictionary>
+    </Window.Resources>
     <Grid>
-        <Label Content="{Binding DisplayString}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <ItemsControl ItemsSource="{Binding Source={StaticResource drones}}" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <UniformGrid Rows="2">
+                        <Label Content="Round Trip:" Margin="0,0,3,0" />
+                        <Label Content="{Binding RoundTripTime}" />
+
+                        <Label Content="RSSI (dBm):" Margin="0,0,3,0" />
+                        <Label Content="{Binding RssiInDbMilliWatts}" />
+                    </UniformGrid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
     </Grid>
 </Window>

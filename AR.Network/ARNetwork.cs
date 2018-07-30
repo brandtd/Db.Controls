@@ -27,6 +27,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Threading.Tasks;
 using Zeroconf;
 
 namespace AR.Drone
@@ -43,10 +44,20 @@ namespace AR.Drone
             _listener.ServiceFound += onServiceFound;
             _listener.ServiceLost += onServiceLost;
             _listener.Error += onServiceError;
+
+            ARBebop drone = new ARBebop(_codec);
+            drone.Connect(IPAddress.Parse("192.168.42.1"), 44444).ContinueWith(
+                t =>
+                {
+                    if (string.IsNullOrEmpty(t.Result))
+                    {
+                        Drones.Add(drone);
+                    }
+                }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         /// <summary>Discovered/connected drones.</summary>
-        public ObservableCollection<ARDrone> Drones { get; } = new ObservableCollection<ARDrone>();
+        public ObservableCollection<IARDrone> Drones { get; } = new ObservableCollection<IARDrone>();
 
         /// <inheritdoc cref="IDisposable.Dispose" />
         public void Dispose()
@@ -80,23 +91,30 @@ namespace AR.Drone
             int port = host.Services[_serviceName].Port;
             IPAddress addr = IPAddress.Parse(address);
 
-            ARBebop drone = new ARBebop(_codec);
-            string error = await drone.Connect(addr, (ushort)port);
-
-            if (string.IsNullOrEmpty(error))
+            if (Drones.FirstOrDefault(d => d.Address == addr) == null)
             {
-                Drones.Add(drone);
+                Console.WriteLine($"Discovered service: {address}:{port}");
+
+                ARBebop drone = new ARBebop(_codec);
+                string error = await drone.Connect(addr, (ushort)port);
+
+                if (string.IsNullOrEmpty(error))
+                {
+                    Drones.Add(drone);
+                }
             }
         }
 
         private void onServiceLost(object sender, IZeroconfHost host)
         {
+            Console.WriteLine($"Lost service: {host.IPAddress}");
+
             IPAddress hostAddress = IPAddress.Parse(host.IPAddress);
-            ARDrone drone = Drones.FirstOrDefault(d => d.Address == hostAddress);
+            IARDrone drone = Drones.FirstOrDefault(d => d.Address == hostAddress);
             if (drone != null)
             {
                 Drones.Remove(drone);
-                drone.Dispose();
+                (drone as IDisposable)?.Dispose();
             }
         }
     }

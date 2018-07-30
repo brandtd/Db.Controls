@@ -98,9 +98,10 @@ namespace AR.Commands
         {
             foreach (Type type in assembly.GetTypes())
             {
-                if (typeof(ARCommand).GetTypeInfo().IsAssignableFrom(type))
+                if (typeof(ARCommand).GetTypeInfo().IsAssignableFrom(type) && !type.IsAbstract)
                 {
-                    foreach (PropertyInfo property in type.GetTypeInfo().GetProperties(BindingFlags.Static))
+                    PropertyInfo property = type.GetTypeInfo().GetProperty("CommandIdentifier");
+                    if (property != null)
                     {
                         if (property.PropertyType == typeof(ARCommandIdentifier))
                         {

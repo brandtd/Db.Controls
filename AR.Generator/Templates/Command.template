@@ -29,7 +29,7 @@ namespace {{Namespace}}
         }
 
 		/// <summary>Unique identifier for all commands of this type.</summary>
-		public static ARCommandIdentifier CommandIdentifier = new ARCommandIdentifier({{FeatureId}}, {{ClassId}}, {{CommandId}});
+		public static ARCommandIdentifier CommandIdentifier { get; } = new ARCommandIdentifier({{FeatureId}}, {{ClassId}}, {{CommandId}});
 
         /// <inheritdoc cref="ARCommand.ARCommandSize" />
         public override int ARCommandSize => {{Size}};
@@ -61,6 +61,7 @@ namespace {{Namespace}}
                 index += {{ConsumedBytes}};
 
 {{/each}}
+                success = true;
             }
 
             return success;
