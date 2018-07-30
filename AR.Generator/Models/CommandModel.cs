@@ -33,7 +33,7 @@ namespace AR.Generator.Models
         public CommandModel(XmlProject xmlProject, XmlClass xmlClass, XmlCommand xmlCommand)
         {
             ClassId = xmlClass.Id;
-            ClassName = $"{xmlCommand.Name.ToCamelCase()}";
+            ClassName = $"Cmd{xmlCommand.Name.ToCamelCase()}";
             CommandId = xmlCommand.Id;
             FeatureId = xmlProject.Id;
             Namespace = "ARParrot.Commands" + $".{xmlProject.Name.ToCamelCase()}.{xmlClass.Name.ToCamelCase()}";
@@ -95,6 +95,7 @@ namespace AR.Generator.Models
 
         public string UsingBlock { get; } =
         @"using AR.Commands;
+using AR.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;

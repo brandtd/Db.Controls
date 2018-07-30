@@ -27,7 +27,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ParrotControl
+namespace AR.App
 {
     /// <summary>
     ///     Provides method for firing property changed event with correct property name.

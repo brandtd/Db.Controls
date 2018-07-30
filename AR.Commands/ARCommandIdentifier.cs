@@ -19,12 +19,13 @@
 
 #endregion MIT License (c) 2018 Dan Brandt
 
+using AR.Common;
 using System;
 
 namespace AR.Commands
 {
     /// <summary>Identifies an ARCommand type.</summary>
-    public class ARCommandIdentifier
+    public class ARCommandIdentifier : IEquatable<ARCommandIdentifier>
     {
         /// <summary>Create new identifier.</summary>
         public ARCommandIdentifier(byte featureId, byte classId, ushort commandId)
@@ -91,6 +92,44 @@ namespace AR.Commands
                 index = originalIndex;
             }
             return success;
+        }
+
+        /// <inheritdoc cref="IEquatable{T}.Equals(T)" />
+        public bool Equals(ARCommandIdentifier other)
+        {
+            if (other != null)
+            {
+                return ClassId == other.ClassId &&
+                       CommandId == other.CommandId &&
+                       FeatureId == other.FeatureId;
+            }
+
+            return false;
+        }
+
+        /// <inheritdoc cref="object.Equals" />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) { return false; }
+            if (ReferenceEquals(this, obj)) { return true; }
+            if (obj.GetType() != GetType()) { return false; }
+            return Equals(obj as ARCommandIdentifier);
+        }
+
+        /// <inheritdoc cref="object.GetHashCode" />
+        public override int GetHashCode()
+        {
+            int hashCode = 610168241;
+            hashCode = hashCode * -1521134295 + ClassId.GetHashCode();
+            hashCode = hashCode * -1521134295 + CommandId.GetHashCode();
+            hashCode = hashCode * -1521134295 + FeatureId.GetHashCode();
+            return hashCode;
+        }
+
+        /// <inheritdoc cref="object.ToString" />
+        public override string ToString()
+        {
+            return $"{FeatureId}:{ClassId}:{CommandId}";
         }
 
         private const int _identifierSize = 4;

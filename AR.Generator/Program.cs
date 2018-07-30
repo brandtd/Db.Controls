@@ -40,10 +40,6 @@ namespace AR.Generator
 
         public static void HandleErrors(IEnumerable<Error> errors)
         {
-            foreach (Error error in errors)
-            {
-                Console.WriteLine(error);
-            }
         }
 
         public static void Main(string[] args)
@@ -68,6 +64,8 @@ namespace AR.Generator
 
                 foreach (string inputFileName in options.InputFiles)
                 {
+                    Console.WriteLine($"Parsing input file: {inputFileName}");
+
                     using (StreamReader inputFileReader = File.OpenText(inputFileName))
                     {
                         XmlSerializer xml = new XmlSerializer(typeof(XmlProject));
@@ -84,6 +82,7 @@ namespace AR.Generator
                                 foreach (XmlCommand commandDef in classDef.Commands)
                                 {
                                     string outputFileName = $"{classDirectory}/{projectDef.Name.ToCamelCase()}.{classDef.Name.ToCamelCase()}.{commandDef.Name.ToCamelCase()}.cs";
+                                    Console.WriteLine($"  Generating file: {outputFileName}");
 
                                     // Do this double write/read thing to ensure line endings are consistent.
                                     string tmpName = Path.GetTempFileName();

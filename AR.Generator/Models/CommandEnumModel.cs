@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AR.Generator.Models
@@ -49,7 +50,12 @@ namespace AR.Generator.Models
     {
         public CommandEnumValueModel(XmlEnumValue description, int value)
         {
-            CamelCaseName = description.Name.ToCamelCase();
+            string camelCaseName = description.Name.ToCamelCase();
+            if (Regex.IsMatch(camelCaseName.Substring(0, 1), "[0-9]"))
+            {
+                camelCaseName = "_" + camelCaseName;
+            }
+            CamelCaseName = camelCaseName;
             Description = description.Description.CleanUpXml();
             Value = value;
         }

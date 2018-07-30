@@ -19,43 +19,14 @@
 
 #endregion MIT License (c) 2018 Dan Brandt
 
-using AR.Drone;
-using System;
-using System.Collections.Specialized;
+using AR.Commands;
 
-namespace AR.App
+namespace AR.Drone
 {
-    public class MainWindowViewModel : PropertyChangedBase, IDisposable
+    public class ARBebop : ARDrone
     {
-        public MainWindowViewModel()
+        public ARBebop(ARCommandCodec codec) : base(codec)
         {
-            _droneNetwork = new ARNetwork();
-            ((INotifyCollectionChanged)_droneNetwork.Drones).CollectionChanged += onDroneListChanged;
-        }
-
-        public string DisplayString
-        {
-            get => _displayString;
-            set => SetProperty(ref _displayString, value);
-        }
-
-        /// <inheritdoc cref="IDisposable.Dispose" />
-        public void Dispose()
-        {
-            if (_droneNetwork != null)
-            {
-                ((INotifyCollectionChanged)_droneNetwork.Drones).CollectionChanged -= onDroneListChanged;
-                _droneNetwork.Dispose();
-                _droneNetwork = null;
-            }
-        }
-
-        private string _displayString = "Searching ...";
-        private ARNetwork _droneNetwork;
-
-        private void onDroneListChanged(object sender, NotifyCollectionChangedEventArgs e)
-        {
-            _displayString = $"Num drones: {_droneNetwork.Drones.Count}";
         }
     }
 }

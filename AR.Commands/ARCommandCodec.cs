@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace AR.Commands
 {
@@ -70,9 +71,9 @@ namespace AR.Commands
             bool success = false;
             int originalIndex = index;
 
-            if (buffer.Length - index >= command.ARCommandSize + command.Id.Size)
+            if (buffer.Length - index >= command.ARCommandSize + command.ARCommandId.Size)
             {
-                if (command.Id.Encode(buffer, ref index) &&
+                if (command.ARCommandId.Encode(buffer, ref index) &&
                     command.Encode(buffer, ref index))
                 {
                     success = true;
@@ -87,11 +88,38 @@ namespace AR.Commands
         }
 
         /// <summary>Register a command with the codec so it can be decoded.</summary>
-        public void Register<T>(ARCommandIdentifier CommandId) where T : ARCommand
+        public void Register<T>(ARCommandIdentifier commandId) where T : ARCommand
         {
-            _commandTypeMap[CommandId] = typeof(T);
+            register(commandId, typeof(T));
+        }
+
+        /// <summary>Register all commands found in the given assembly.</summary>
+        public void RegisterCommands(Assembly assembly)
+        {
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (typeof(ARCommand).GetTypeInfo().IsAssignableFrom(type))
+                {
+                    foreach (PropertyInfo property in type.GetTypeInfo().GetProperties(BindingFlags.Static))
+                    {
+                        if (property.PropertyType == typeof(ARCommandIdentifier))
+                        {
+                            register((ARCommandIdentifier)property.GetValue(null), type);
+                        }
+                    }
+                }
+            }
         }
 
         private readonly Dictionary<ARCommandIdentifier, Type> _commandTypeMap = new Dictionary<ARCommandIdentifier, Type>();
+
+        private void register(ARCommandIdentifier commandId, Type commandType)
+        {
+            if (_commandTypeMap.ContainsKey(commandId))
+            {
+                Console.WriteLine($"Duplicate registration of same command type? Command ID: {commandId}, type: {commandType}");
+            }
+            _commandTypeMap[commandId] = commandType;
+        }
     }
 }

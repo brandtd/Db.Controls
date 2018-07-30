@@ -10,6 +10,13 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AR.Commands", "AR.Commands\AR.Commands.csproj", "{3DAE880F-87CF-466E-8538-2FA29C062F69}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AR.Commands.Generated", "AR.Commands.Generated\AR.Commands.Generated.csproj", "{150FFA54-4A3F-4FA6-9BE2-A7984FD05F8E}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B34C7100-B995-4884-B81F-AF8ABADA5700} = {B34C7100-B995-4884-B81F-AF8ABADA5700}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AR.Network", "AR.Network\AR.Network.csproj", "{3C26AE3C-C516-44C3-B4AD-20F462853654}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AR.Common", "AR.Common\AR.Common.csproj", "{5DB491D2-1B57-4830-BC33-787E51AD7014}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +40,14 @@ Global
 		{150FFA54-4A3F-4FA6-9BE2-A7984FD05F8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{150FFA54-4A3F-4FA6-9BE2-A7984FD05F8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{150FFA54-4A3F-4FA6-9BE2-A7984FD05F8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C26AE3C-C516-44C3-B4AD-20F462853654}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C26AE3C-C516-44C3-B4AD-20F462853654}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C26AE3C-C516-44C3-B4AD-20F462853654}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C26AE3C-C516-44C3-B4AD-20F462853654}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DB491D2-1B57-4830-BC33-787E51AD7014}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DB491D2-1B57-4830-BC33-787E51AD7014}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DB491D2-1B57-4830-BC33-787E51AD7014}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DB491D2-1B57-4830-BC33-787E51AD7014}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

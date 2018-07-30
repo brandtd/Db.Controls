@@ -24,9 +24,12 @@ namespace {{Namespace}}
 {{/if}}
 
         /// <summary>Create command structure.</summary>
-        public {{ClassName}}() : base(new ARCommandIdentifier({{FeatureId}}, {{ClassId}}, {{CommandId}}))
+        public {{ClassName}}() : base(CommandIdentifier)
         {
         }
+
+		/// <summary>Unique identifier for all commands of this type.</summary>
+		public static ARCommandIdentifier CommandIdentifier = new ARCommandIdentifier({{FeatureId}}, {{ClassId}}, {{CommandId}});
 
         /// <inheritdoc cref="ARCommand.ARCommandSize" />
         public override int ARCommandSize => {{Size}};

@@ -19,37 +19,26 @@
 
 #endregion MIT License (c) 2018 Dan Brandt
 
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
 
-namespace ParrotControl
+namespace AR.Drone
 {
     [JsonObject]
-    public class ConnectionResponse
+    public class ARConnectionRequest
     {
-        [JsonProperty(PropertyName = "arstream_fragment_max_ack_interval", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int? ArstreamFragmentMaxAckInterval { get; set; }
+        [JsonProperty(PropertyName = "controller_name", Required = Required.Always)]
+        public string ControllerName { get; set; }
 
-        [JsonProperty(PropertyName = "arstream_fragment_maximum_number", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int? ArstreamFragmentMaximumNumber { get; set; }
+        [JsonProperty(PropertyName = "controller_type", Required = Required.Always)]
+        public string ControllerType { get; set; }
 
-        [JsonProperty(PropertyName = "arstream_fragment_size", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public int? ArstreamFragmentSize { get; set; }
+        [JsonProperty(PropertyName = "d2c_port", Required = Required.Always)]
+        public int D2cPort { get; set; }
 
-        [JsonProperty(PropertyName = "c2d_port", Required = Required.Always)]
-        public int C2dPort { get; set; }
-
-        [JsonProperty(PropertyName = "c2d_update_port", Required = Required.Always)]
-        public int? C2dUpdatePort { get; set; }
-
-        [JsonProperty(PropertyName = "skycontroller_version", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public string SkycontrollerVersion { get; set; }
-
-        [JsonProperty(PropertyName = "status", Required = Required.Always)]
-        public int Status { get; set; }
+        [JsonProperty(PropertyName = "device_id", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string DeviceId { get; set; }
     }
 }

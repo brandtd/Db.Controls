@@ -24,11 +24,11 @@ namespace AR.Commands
     /// <summary>Base class for an ARSDK command.</summary>
     public abstract class ARCommand
     {
+        /// <summary>Identifier for command.</summary>
+        public ARCommandIdentifier ARCommandId { get; }
+
         /// <summary>Size of command's data section (excludes command's header).</summary>
         public virtual int ARCommandSize => 0;
-
-        /// <summary>Identifier for command.</summary>
-        public ARCommandIdentifier Id { get; }
 
         /// <summary>
         ///     Decode command's data from a <c>byte[]</c>, starting at the given index, incrementing
@@ -48,7 +48,7 @@ namespace AR.Commands
         /// <summary>Create new command with given IDs.</summary>
         protected ARCommand(ARCommandIdentifier id)
         {
-            Id = id;
+            ARCommandId = id;
         }
     }
 }

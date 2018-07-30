@@ -21,39 +21,33 @@
 
 using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
+using System.Text;
+using Newtonsoft.Json;
 
-namespace AR.App
+namespace AR.Drone
 {
-    /// <summary>Interaction logic for App.xaml</summary>
-    public partial class App : Application
+    [JsonObject]
+    public class ARConnectionResponse
     {
-        protected override void OnExit(ExitEventArgs e)
-        {
-            _mainWindow.Close();
-            _mainWindow = null;
+        [JsonProperty(PropertyName = "arstream_fragment_max_ack_interval", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int? ArstreamFragmentMaxAckInterval { get; set; }
 
-            (_viewModel as IDisposable)?.Dispose();
-            _viewModel = null;
+        [JsonProperty(PropertyName = "arstream_fragment_maximum_number", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int? ArstreamFragmentMaximumNumber { get; set; }
 
-            base.OnExit(e);
-        }
+        [JsonProperty(PropertyName = "arstream_fragment_size", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public int? ArstreamFragmentSize { get; set; }
 
-        protected override void OnStartup(StartupEventArgs e)
-        {
-            base.OnStartup(e);
+        [JsonProperty(PropertyName = "c2d_port", Required = Required.Always)]
+        public int C2dPort { get; set; }
 
-            _viewModel = new MainWindowViewModel();
-            _mainWindow = new MainWindow();
-            _mainWindow.DataContext = _viewModel;
-            _mainWindow.Show();
-        }
+        [JsonProperty(PropertyName = "c2d_update_port", Required = Required.Always)]
+        public int? C2dUpdatePort { get; set; }
 
-        private MainWindow _mainWindow;
-        private MainWindowViewModel _viewModel;
+        [JsonProperty(PropertyName = "skycontroller_version", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string SkycontrollerVersion { get; set; }
+
+        [JsonProperty(PropertyName = "status", Required = Required.Always)]
+        public int Status { get; set; }
     }
 }
