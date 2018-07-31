@@ -19,14 +19,25 @@
 
 #endregion MIT License (c) 2018 Dan Brandt
 
-using AR.Commands;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace AR.Drone
+namespace AR.Device
 {
-    public class ARBebop : ARDrone
+    /// <summary>Possible "return home" behaviors.</summary>
+    public enum ReturnHomeBehavior
     {
-        public ARBebop(ARCommandCodec codec) : base(codec)
-        {
-        }
+        /// <summary>Behavior is unknown.</summary>
+        Unknown,
+
+        /// <summary>Drone will return to take off position.</summary>
+        TakeOff,
+
+        /// <summary>Drone will return to pilot position.</summary>
+        Pilot,
+
+        /// <summary>Drone will return to most recent "follow me" position.</summary>
+        FollowMe,
     }
 }

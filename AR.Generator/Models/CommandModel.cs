@@ -36,7 +36,7 @@ namespace AR.Generator.Models
             ClassName = $"Cmd{xmlCommand.Name.ToCamelCase()}";
             CommandId = xmlCommand.Id;
             FeatureId = xmlProject.Id;
-            Namespace = "ARParrot.Commands" + $".{xmlProject.Name.ToCamelCase()}.{xmlClass.Name.ToCamelCase()}";
+            Namespace = "AR.Commands" + $".{xmlProject.Name.ToCamelCase()}.{xmlClass.Name.ToCamelCase()}";
             Summary = xmlCommand.Comment?.Description?.CleanUpXml() ?? "";
 
             string size = "0";

@@ -19,23 +19,22 @@
 
 #endregion MIT License (c) 2018 Dan Brandt
 
-using Newtonsoft.Json;
+using System;
+using System.ComponentModel;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace AR.Network
 {
-    [JsonObject]
-    public class ARConnectionRequest
+    public interface IARWifiDevice : INotifyPropertyChanged, IDisposable
     {
-        [JsonProperty(PropertyName = "controller_name", Required = Required.Always)]
-        public string ControllerName { get; set; }
+        /// <summary>IP address of device.</summary>
+        IPAddress Address { get; }
 
-        [JsonProperty(PropertyName = "controller_type", Required = Required.Always)]
-        public string ControllerType { get; set; }
+        /// <summary>Measured round-trip-time for comms with drone.</summary>
+        TimeSpan RoundTripTime { get; }
 
-        [JsonProperty(PropertyName = "d2c_port", Required = Required.Always)]
-        public int D2cPort { get; set; }
-
-        [JsonProperty(PropertyName = "device_id", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public string DeviceId { get; set; }
+        /// <summary>Connect with drone at given address/port.</summary>
+        Task<string> Connect(IPAddress address, ushort port)
     }
 }

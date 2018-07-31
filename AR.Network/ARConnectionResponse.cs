@@ -19,12 +19,9 @@
 
 #endregion MIT License (c) 2018 Dan Brandt
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Newtonsoft.Json;
 
-namespace AR.Drone
+namespace AR.Network
 {
     [JsonObject]
     public class ARConnectionResponse

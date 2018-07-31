@@ -27,10 +27,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Threading.Tasks;
 using Zeroconf;
 
-namespace AR.Drone
+namespace AR.Network
 {
     public class ARNetwork : IDisposable
     {

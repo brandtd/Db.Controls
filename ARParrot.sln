@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AR.Network", "AR.Network\AR
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AR.Common", "AR.Common\AR.Common.csproj", "{5DB491D2-1B57-4830-BC33-787E51AD7014}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AR.Device", "AR.Device\AR.Device.csproj", "{28C30FCC-A028-48A8-8849-130AB0C81F96}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +50,10 @@ Global
 		{5DB491D2-1B57-4830-BC33-787E51AD7014}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DB491D2-1B57-4830-BC33-787E51AD7014}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5DB491D2-1B57-4830-BC33-787E51AD7014}.Release|Any CPU.Build.0 = Release|Any CPU
+		{28C30FCC-A028-48A8-8849-130AB0C81F96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{28C30FCC-A028-48A8-8849-130AB0C81F96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{28C30FCC-A028-48A8-8849-130AB0C81F96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{28C30FCC-A028-48A8-8849-130AB0C81F96}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

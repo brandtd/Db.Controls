@@ -19,23 +19,34 @@
 
 #endregion MIT License (c) 2018 Dan Brandt
 
-using Newtonsoft.Json;
+using AR.Network;
 
-namespace AR.Network
+namespace AR.Device
 {
-    [JsonObject]
-    public class ARConnectionRequest
+    public interface IARDrone : IARWifiDevice
     {
-        [JsonProperty(PropertyName = "controller_name", Required = Required.Always)]
-        public string ControllerName { get; set; }
+        /// <summary>Product hardware version.</summary>
+        string HardwareVersion { get; }
 
-        [JsonProperty(PropertyName = "controller_type", Required = Required.Always)]
-        public string ControllerType { get; set; }
+        /// <summary>Whether WiFi is in "outdoor" mode.</summary>
+        bool OutdoorWifi { get; }
 
-        [JsonProperty(PropertyName = "d2c_port", Required = Required.Always)]
-        public int D2cPort { get; set; }
+        /// <summary>Device's product name.</summary>
+        string ProductName { get; }
 
-        [JsonProperty(PropertyName = "device_id", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public string DeviceId { get; set; }
+        /// <summary>RSSI of the signal between controller and the product (in dbm).</summary>
+        short RssiInDbMilliWatts { get; }
+
+        /// <summary>Product serial number.</summary>
+        string SerialNumber { get; }
+
+        /// <summary>Product software version.</summary>
+        string SoftwareVersion { get; }
+
+        /// <summary>Date on system (in ISO-8601 format).</summary>
+        string SystemDate { get; }
+
+        /// <summary>Time on system (in ISO-8601 format).</summary>
+        string SystemTime { get; }
     }
 }

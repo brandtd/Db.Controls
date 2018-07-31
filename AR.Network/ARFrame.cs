@@ -24,7 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace AR.Drone
+namespace AR.Network
 {
     /// <summary>ARSDK 3 network frame.</summary>
     public class ARFrame

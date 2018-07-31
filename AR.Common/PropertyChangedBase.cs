@@ -23,7 +23,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace AR.Device
+namespace AR.Common
 {
     /// <summary>
     ///     Provides method for firing property changed event with correct property name.

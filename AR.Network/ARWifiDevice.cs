@@ -1,9 +1,26 @@
-﻿using AR.Commands;
-using ARParrot.Commands.Ardrone3.PilotingState;
-using ARParrot.Commands.Common.CommonState;
-using ARParrot.Commands.Common.Settings;
-using ARParrot.Commands.Common.SettingsState;
-using ARParrot.Commands.Common.WifiSettingsState;
+﻿#region MIT License (c) 2018 Dan Brandt
+
+// Copyright 2018 Dan Brandt
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+// associated documentation files (the "Software"), to deal in the Software without restriction,
+// including without limitation the rights to use, copy, modify, merge, publish, distribute,
+// sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all copies or
+// substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+// NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT
+// OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#endregion MIT License (c) 2018 Dan Brandt
+
+using AR.Commands;
+using AR.Common;
 using Newtonsoft.Json;
 using System;
 using System.Diagnostics;
@@ -14,16 +31,16 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AR.Drone
+namespace AR.Network
 {
-    /// <summary>Base implementation of a drone.</summary>
-    public abstract class ARDrone : PropertyChangedBase, IARDrone, IDisposable
+    /// <summary>Handles network details of a WiFi connected device.</summary>
+    public class ARWifiDevice : PropertyChangedBase, IARWifiDevice
     {
-        /// <inheritdoc cref="IARDrone.Address" />
+        /// <inheritdoc cref="IARWifiDevice.Address" />
         public IPAddress Address
         {
             get => _address;
-            private set
+            protected set
             {
                 if (_address != value)
                 {
@@ -33,118 +50,14 @@ namespace AR.Drone
             }
         }
 
-        /// <inheritdoc cref="Altitude" />
-        public float Altitude
-        {
-            get => _altitude;
-            set => SetProperty(ref _altitude, value);
-        }
-
-        /// <inheritdoc cref="IARDrone.HardwareVersion" />
-        public string HardwareVersion
-        {
-            get => _hardwareVersion;
-            set => SetProperty(ref _hardwareVersion, value);
-        }
-
-        /// <inheritdoc cref="IARDrone.OutdoorWifi" />
-        public bool OutdoorWifi
-        {
-            get => _outdoorWifi;
-            private set => SetProperty(ref _outdoorWifi, value);
-        }
-
-        /// <inheritdoc cref="Roll" />
-        public float Pitch
-        {
-            get => _pitch;
-            set => SetProperty(ref _pitch, value);
-        }
-
-        /// <inheritdoc cref="IARDrone.ProductName" />
-        public string ProductName
-        {
-            get => _productName;
-            private set => SetProperty(ref _productName, value);
-        }
-
-        /// <inheritdoc cref="Roll" />
-        public float Roll
-        {
-            get => _roll;
-            set => SetProperty(ref _roll, value);
-        }
-
-        /// <inheritdoc cref="IARDrone.RoundTripTime" />
+        /// <inheritdoc cref="IARWifiDevice.RoundTripTime" />
         public TimeSpan RoundTripTime
         {
             get => _roundTripTime;
             private set => SetProperty(ref _roundTripTime, value);
         }
 
-        /// <inheritdoc cref="IARDrone.RssiInDbMilliWatts" />
-        public short RssiInDbMilliWatts
-        {
-            get => _rssiInDbMilliWatts;
-            private set => SetProperty(ref _rssiInDbMilliWatts, value);
-        }
-
-        /// <inheritdoc cref="IARDrone.SerialNumber" />
-        public string SerialNumber
-        {
-            get => _serialHigh + _serialLow;
-        }
-
-        /// <inheritdoc cref="IARDrone.SoftwareVersion" />
-        public string SoftwareVersion
-        {
-            get => _softwareVersion;
-            set => SetProperty(ref _softwareVersion, value);
-        }
-
-        /// <inheritdoc cref="SpeedDown" />
-        public float SpeedDown
-        {
-            get => _speedDown;
-            set => SetProperty(ref _speedDown, value);
-        }
-
-        /// <inheritdoc cref="SpeedEast" />
-        public float SpeedEast
-        {
-            get => _speedEast;
-            set => SetProperty(ref _speedEast, value);
-        }
-
-        /// <inheritdoc cref="SpeedNorth" />
-        public float SpeedNorth
-        {
-            get => _speedNorth;
-            set => SetProperty(ref _speedNorth, value);
-        }
-
-        /// <inheritdoc cref="IARDrone.SystemDate" />
-        public string SystemDate
-        {
-            get => _systemDate;
-            set => SetProperty(ref _systemDate, value);
-        }
-
-        /// <inheritdoc cref="IARDrone.SystemTime" />
-        public string SystemTime
-        {
-            get => _systemTime;
-            set => SetProperty(ref _systemTime, value);
-        }
-
-        /// <inheritdoc cref="Roll" />
-        public float Yaw
-        {
-            get => _yaw;
-            set => SetProperty(ref _yaw, value);
-        }
-
-        /// <summary>Connect with drone at given address/port.</summary>
+        /// <inheritdoc cref="IARWifiDevice.Connect" />
         public virtual async Task<string> Connect(IPAddress address, ushort port)
         {
             string error = string.Empty;
@@ -218,9 +131,15 @@ namespace AR.Drone
         }
 
         /// <summary>Use given codec to encode/decode commands.</summary>
-        protected ARDrone(ARCommandCodec codec)
+        protected ARWifiDevice(ARCommandCodec codec)
         {
             _codec = codec;
+        }
+
+        /// <summary>Process a received command from the device.</summary>
+        protected virtual Task HandleReceivedCommand(ARCommand command)
+        {
+            return Task.CompletedTask;
         }
 
         private const int _c2dCommandBuffer = 10;
@@ -232,29 +151,13 @@ namespace AR.Drone
         private const int _d2cStreamBuffer = 125;
         private readonly ARCommandCodec _codec;
         private IPAddress _address;
-        private float _altitude;
         private UdpClient _client;
         private CancellationTokenSource _cts;
-        private string _hardwareVersion = string.Empty;
-        private bool _outdoorWifi;
         private Task _pingTask;
-        private float _pitch;
-        private string _productName = string.Empty;
         private Task _receiveTask;
         private IPEndPoint _remoteEndPoint;
-        private float _roll;
-        private TimeSpan _roundTripTime;
-        private short _rssiInDbMilliWatts;
-        private string _serialHigh = string.Empty;
-        private string _serialLow = string.Empty;
-        private string _softwareVersion = string.Empty;
-        private float _speedDown;
-        private float _speedEast;
-        private float _speedNorth;
-        private string _systemDate = string.Empty;
-        private string _systemTime = string.Empty;
 
-        private float _yaw;
+        private TimeSpan _roundTripTime;
 
         private async Task handleIfAckRequested(ARFrame frame)
         {
@@ -273,7 +176,7 @@ namespace AR.Drone
             }
         }
 
-        private Task handleIfCommandTypeReceived(ARFrame frame)
+        private async Task handleIfCommandTypeReceived(ARFrame frame)
         {
             // Received a command data type.
             if (frame.TargetBuffer == _d2cCommandBuffer ||
@@ -283,68 +186,9 @@ namespace AR.Drone
                 ARCommand command = _codec.Decode(frame.Data, ref dataIndex);
                 if (command != null)
                 {
-                    if (command is CmdWifiSignalChanged wifiSignalStatusMsg)
-                    {
-                        RssiInDbMilliWatts = wifiSignalStatusMsg.Rssi;
-                    }
-                    else if (command is CmdOutdoorSettingsChanged outdoorSettingsMsg)
-                    {
-                        OutdoorWifi = outdoorSettingsMsg.Outdoor == 1;
-                    }
-                    else if (command is CmdProductNameChanged productNameMsg)
-                    {
-                        ProductName = productNameMsg.Name;
-                    }
-                    else if (command is CmdProductSerialHighChanged serialHighMsg)
-                    {
-                        _serialHigh = serialHighMsg.High;
-                        OnPropertyChanged(nameof(SerialNumber));
-                    }
-                    else if (command is CmdProductSerialLowChanged serialLowMsg)
-                    {
-                        _serialLow = serialLowMsg.Low;
-                        OnPropertyChanged(nameof(SerialNumber));
-                    }
-                    else if (command is CmdProductVersionChanged productMsg)
-                    {
-                        SoftwareVersion = productMsg.Software;
-                        HardwareVersion = productMsg.Hardware;
-                    }
-                    else if (command is CmdCurrentTimeChanged timeMsg)
-                    {
-                        SystemTime = timeMsg.Time;
-                    }
-                    else if (command is CmdCurrentDateChanged dateMsg)
-                    {
-                        SystemDate = dateMsg.Date;
-                    }
-                    else if (command is CmdSpeedChanged speedMsg)
-                    {
-                        // TODO: bebop only
-                        SpeedNorth = speedMsg.SpeedX;
-                        SpeedEast = speedMsg.SpeedY;
-                        SpeedDown = speedMsg.SpeedZ;
-                    }
-                    else if (command is CmdAltitudeChanged altitudeMsg)
-                    {
-                        // TODO: bebop only
-                        Altitude = (float)altitudeMsg.Altitude;
-                    }
-                    else if (command is CmdAttitudeChanged attitudeMsg)
-                    {
-                        // TODO: bebop only
-                        Roll = attitudeMsg.Roll;
-                        Pitch = attitudeMsg.Pitch;
-                        Yaw = attitudeMsg.Yaw;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Rxed: {command.GetType()}");
-                    }
+                    await HandleReceivedCommand(command);
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         private async Task handleIfHeartbeat(ARFrame frame)
@@ -391,7 +235,6 @@ namespace AR.Drone
                     };
                     byte[] data = frame.Encode();
                     await _client.SendAsync(data, data.Length, _remoteEndPoint);
-                    await sendDataMessage(new CmdAllSettings());
                     await Task.Delay(TimeSpan.FromSeconds(1));
                 }
             }
