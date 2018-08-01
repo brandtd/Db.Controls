@@ -28,7 +28,7 @@ namespace AR.Device
 {
     public interface IARBebop : IARDrone
     {
-        /// <summary>Drone's altitude (referenced to?).</summary>
+        /// <summary>Drone's altitude (WGS-84).</summary>
         Distance Altitude { get; }
 
         /// <summary>The current altitude ceiling of the drone.</summary>
@@ -39,6 +39,15 @@ namespace AR.Device
 
         /// <summary>Min allowed value for <see cref="AltitudeCeiling" />.</summary>
         Distance AltitudeCeilingRangeMin { get; }
+
+        /// <summary>Drone's height above its home location.</summary>
+        Distance HeightAboveHome { get; }
+
+        /// <summary>Drone's latitude.</summary>
+        Angle Latitude { get; }
+
+        /// <summary>Drone's longitude.</summary>
+        Angle Longitude { get; }
 
         /// <summary>Amount of time to allow to pass before drone will auto recover.</summary>
         TimeSpan LostCommsReturnHomeDelay { get; }

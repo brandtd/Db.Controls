@@ -67,6 +67,27 @@ namespace AR.Device
             set => SetProperty(ref _altitudeCeilingRangeMin, value);
         }
 
+        /// <inheritdoc cref="IARBebop.HeightAboveHome" />
+        public Distance HeightAboveHome
+        {
+            get => _heightAboveHome;
+            set => SetProperty(ref _heightAboveHome, value);
+        }
+
+        /// <inheritdoc cref="IARBebop.Latitude" />
+        public Angle Latitude
+        {
+            get => _latitude;
+            set => SetProperty(ref _latitude, value);
+        }
+
+        /// <inheritdoc cref="IARBebop.Longitude" />
+        public Angle Longitude
+        {
+            get => _longitude;
+            set => SetProperty(ref _longitude, value);
+        }
+
         /// <inheritdoc cref="IARBebop.LostCommsReturnHomeDelay" />
         public TimeSpan LostCommsReturnHomeDelay
         {
@@ -191,7 +212,13 @@ namespace AR.Device
             }
             else if (command is CmdAltitudeChanged altitudeMsg)
             {
-                Altitude = Distance.FromMeters(altitudeMsg.Altitude);
+                HeightAboveHome = Distance.FromMeters(altitudeMsg.Altitude);
+            }
+            else if (command is CmdGpsLocationChanged locationMsg)
+            {
+                Altitude = locationMsg.Altitude == 500.0 ? Distance.Invalid : Distance.FromMeters(locationMsg.Altitude);
+                Latitude = locationMsg.Latitude == 500.0 ? Angle.Invalid : Angle.Invalid; // TODO
+                Altitude = locationMsg.Altitude == 500.0 ? Distance.Invalid : Distance.FromMeters(locationMsg.Altitude);
             }
             else if (command is CmdAttitudeChanged attitudeMsg)
             {
@@ -252,6 +279,9 @@ namespace AR.Device
         private Distance _altitudeCeiling = Distance.Invalid;
         private Distance _altitudeCeilingRangeMax = Distance.Invalid;
         private Distance _altitudeCeilingRangeMin = Distance.Invalid;
+        private Distance _heightAboveHome = Distance.Invalid;
+        private Angle _latitude = Angle.Invalid;
+        private Angle _longitude = Angle.Invalid;
         private TimeSpan _lostCommsReturnHomeDelay;
         private Speed _maxClimbRate = Speed.Invalid;
         private Speed _maxClimbRateRangeMax = Speed.Invalid;
