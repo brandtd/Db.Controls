@@ -77,7 +77,7 @@ namespace AR.Commands
         /// <returns><c>true</c> if id encoded successfully, <c>false</c> otherwise.</returns>
         public bool Encode(byte[] buffer, ref int index)
         {
-            bool success = false;
+            bool success = true;
             int originalIndex = index;
 
             if (buffer.Length - index >= _identifierSize)

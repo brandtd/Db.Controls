@@ -23,6 +23,7 @@ using DotSpatial.Positioning;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace AR.Device
 {
@@ -93,5 +94,8 @@ namespace AR.Device
 
         /// <summary>Drone's yaw angle.</summary>
         Angle Yaw { get; }
+
+        /// <summary>Sets the maximum flight distance (from home position) for the drone.</summary>
+        Task<bool> SetMaxDistance(Distance maxDistance);
     }
 }

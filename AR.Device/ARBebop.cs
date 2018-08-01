@@ -20,11 +20,14 @@
 #endregion MIT License (c) 2018 Dan Brandt
 
 using AR.Commands;
+using AR.Commands.Ardrone3.CameraState;
 using AR.Commands.Ardrone3.GPSSettings;
 using AR.Commands.Ardrone3.GPSSettingsState;
+using AR.Commands.Ardrone3.PilotingSettings;
 using AR.Commands.Ardrone3.PilotingSettingsState;
 using AR.Commands.Ardrone3.PilotingState;
 using AR.Commands.Ardrone3.SpeedSettingsState;
+using AR.Commands.Common.CommonState;
 using DotSpatial.Positioning;
 using System;
 using System.Threading.Tasks;
@@ -200,6 +203,16 @@ namespace AR.Device
             set => SetProperty(ref _yaw, value);
         }
 
+        /// <inheritdoc cref="IARBebop.SetMaxDistance" />
+        public Task<bool> SetMaxDistance(Distance maxDistance)
+        {
+            CmdMaxDistance cmd = new CmdMaxDistance
+            {
+                Value = (float)maxDistance.ToMeters().Value,
+            };
+            return SendDataWithAckMessage(cmd);
+        }
+
         protected override async Task HandleReceivedCommand(ARCommand command)
         {
             await base.HandleReceivedCommand(command);
@@ -217,8 +230,12 @@ namespace AR.Device
             else if (command is CmdGpsLocationChanged locationMsg)
             {
                 Altitude = locationMsg.Altitude == 500.0 ? Distance.Invalid : Distance.FromMeters(locationMsg.Altitude);
-                Latitude = locationMsg.Latitude == 500.0 ? Angle.Invalid : Angle.Invalid; // TODO
-                Altitude = locationMsg.Altitude == 500.0 ? Distance.Invalid : Distance.FromMeters(locationMsg.Altitude);
+                Latitude = locationMsg.Latitude == 500.0 ? Angle.Invalid : new Angle(locationMsg.Latitude);
+                Longitude = locationMsg.Longitude == 500.0 ? Angle.Invalid : new Angle(locationMsg.Longitude);
+            }
+            else if (command is CmdPositionChanged positionMsg)
+            {
+                // ignore in favor of CmdGpsLocationChanged
             }
             else if (command is CmdAttitudeChanged attitudeMsg)
             {
@@ -268,6 +285,14 @@ namespace AR.Device
                         ReturnHomeBehavior = ReturnHomeBehavior.FollowMe;
                         break;
                 }
+            }
+            else if (command is CmdOrientation orientationMsg)
+            {
+                // TODO
+            }
+            else if (command is CmdWifiSignalChanged wifiMessage)
+            {
+                // TODO (handled by base class)
             }
             else
             {

@@ -20,9 +20,11 @@
 #endregion MIT License (c) 2018 Dan Brandt
 
 using AR.Commands;
+using AR.Commands.Common.Settings;
 using AR.Common;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -142,6 +144,98 @@ namespace AR.Network
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        ///     Send the given command message to the drone, targeting its command buffer, and do not
+        ///     expect an acknowledgment back.
+        /// </summary>
+        protected async Task SendDataMessage(ARCommand command)
+        {
+            byte[] buffer = new byte[1024];
+            int length = 0;
+
+            if (_codec.Encode(command, buffer, ref length))
+            {
+                byte[] dataBuffer = buffer.Take(length).ToArray();
+                ARFrame frame = new ARFrame
+                {
+                    Data = dataBuffer,
+                    SequenceNumber = ARFrame.NextSequenceNumber(_c2dCommandBuffer),
+                    TargetBuffer = _c2dCommandBuffer,
+                    Type = ARFrame.DataType.Data,
+                };
+                byte[] encoded = frame.Encode();
+                await _client.SendAsync(encoded, encoded.Length, _remoteEndPoint);
+            }
+        }
+
+        /// <summary>
+        ///     Send the given command message to the drone, targeting its command buffer, and expect
+        ///     an acknowledgment back. Returns <c>true</c> if command was ack'd, <c>false</c> otherwise.
+        /// </summary>
+        protected async Task<bool> SendDataWithAckMessage(ARCommand command)
+        {
+            try
+            {
+                byte[] buffer = new byte[1024];
+                int length = 0;
+
+                if (_codec.Encode(command, buffer, ref length))
+                {
+                    byte sequenceNumber = ARFrame.NextSequenceNumber(_c2dCommandWithAckBuffer);
+
+                    byte[] dataBuffer = buffer.Take(length).ToArray();
+                    ARFrame frame = new ARFrame
+                    {
+                        Data = dataBuffer,
+                        SequenceNumber = sequenceNumber,
+                        TargetBuffer = _c2dCommandWithAckBuffer,
+                        Type = ARFrame.DataType.DataWithAck,
+                    };
+                    byte[] encoded = frame.Encode();
+
+                    MessageAwaitingAckInfo info = new MessageAwaitingAckInfo
+                    {
+                        SequenceNumber = sequenceNumber,
+                        TargetBuffer = _c2dCommandWithAckBuffer,
+                        RemainingRetries = _maxRetries,
+                        AckTask = new TaskCompletionSource<bool>(),
+                    };
+                    _messagesWaitingForAcks.Add(info);
+
+                    while (info.RemainingRetries > 0)
+                    {
+                        info.RemainingRetries--;
+                        await _client.SendAsync(encoded, encoded.Length, _remoteEndPoint);
+                        if (await Task.WhenAny(info.AckTask.Task, Task.Delay(_ackTimeout)) == info.AckTask.Task)
+                        {
+                            break;
+                        }
+                    }
+
+                    bool acked = info.AckTask.Task.IsCompleted;
+                    _messagesWaitingForAcks.Remove(info);
+
+                    return acked;
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected exception: {ex.Message}");
+                if (Debugger.IsAttached)
+                {
+                    Debugger.Break();
+                }
+            }
+
+            return false;
+        }
+
         private const int _c2dCommandBuffer = 10;
         private const int _c2dCommandWithAckBuffer = 11;
         private const int _c2dEmergencyCommandBuffer = 12;
@@ -149,15 +243,33 @@ namespace AR.Network
         private const int _d2cCommandBuffer = 127;
         private const int _d2cCommandWithAckBuffer = 126;
         private const int _d2cStreamBuffer = 125;
+        private const int _maxRetries = 3;
+        private static readonly TimeSpan _ackTimeout = TimeSpan.FromMilliseconds(500);
         private readonly ARCommandCodec _codec;
+        private readonly List<MessageAwaitingAckInfo> _messagesWaitingForAcks = new List<MessageAwaitingAckInfo>();
         private IPAddress _address;
         private UdpClient _client;
         private CancellationTokenSource _cts;
         private Task _pingTask;
         private Task _receiveTask;
         private IPEndPoint _remoteEndPoint;
-
         private TimeSpan _roundTripTime;
+
+        private Task handleIfAck(ARFrame frame)
+        {
+            if (frame.Type == ARFrame.DataType.Ack &&
+                frame.TargetBuffer == (_c2dCommandWithAckBuffer | 0x80) &&
+                frame.Data.Length == 1)
+            {
+                MessageAwaitingAckInfo ackInfo = _messagesWaitingForAcks.FirstOrDefault(
+                    info =>
+                        info.TargetBuffer == (frame.TargetBuffer & 0x7F) &&
+                        info.SequenceNumber == frame.Data[0]);
+                ackInfo.AckTask.SetResult(true);
+            }
+
+            return Task.CompletedTask;
+        }
 
         private async Task handleIfAckRequested(ARFrame frame)
         {
@@ -205,8 +317,6 @@ namespace AR.Network
                 }.Encode();
 
                 await _client.SendAsync(response, response.Length, _remoteEndPoint);
-
-                Console.WriteLine($"Bounced back packet (Seq: {frame.SequenceNumber})");
             }
             else if (frame.TargetBuffer == 1)
             {
@@ -221,6 +331,7 @@ namespace AR.Network
 
         private async Task pingTask()
         {
+            int counter = 0;
             try
             {
                 while (!_cts.IsCancellationRequested)
@@ -235,6 +346,13 @@ namespace AR.Network
                     };
                     byte[] data = frame.Encode();
                     await _client.SendAsync(data, data.Length, _remoteEndPoint);
+
+                    counter--;
+                    if (counter <= 0)
+                    {
+                        counter = 10;
+                        await SendDataMessage(new CmdAllSettings());
+                    }
                     await Task.Delay(TimeSpan.FromSeconds(1));
                 }
             }
@@ -271,6 +389,7 @@ namespace AR.Network
                         {
                             await handleIfHeartbeat(frame);
                             await handleIfAckRequested(frame);
+                            await handleIfAck(frame);
                             await handleIfCommandTypeReceived(frame);
                         }
                         else
@@ -296,24 +415,20 @@ namespace AR.Network
             }
         }
 
-        private async Task sendDataMessage(ARCommand command)
+        /// <summary>Information about a message that is currently awaiting an acknowledgement.</summary>
+        private class MessageAwaitingAckInfo
         {
-            byte[] buffer = new byte[1024];
-            int length = 0;
+            /// <summary>Object to signal on receiving an acknowledgement for this message.</summary>
+            public TaskCompletionSource<bool> AckTask { get; set; }
 
-            if (_codec.Encode(command, buffer, ref length))
-            {
-                byte[] dataBuffer = buffer.Take(length).ToArray();
-                ARFrame frame = new ARFrame
-                {
-                    Data = dataBuffer,
-                    SequenceNumber = ARFrame.NextSequenceNumber(_c2dCommandBuffer),
-                    TargetBuffer = _c2dCommandBuffer,
-                    Type = ARFrame.DataType.Data,
-                };
-                byte[] encoded = frame.Encode();
-                await _client.SendAsync(encoded, encoded.Length, _remoteEndPoint);
-            }
+            /// <summary>Number of times left to resend message before giving up.</summary>
+            public int RemainingRetries { get; set; }
+
+            /// <summary>Message's sequence number within its buffer.</summary>
+            public byte SequenceNumber { get; set; }
+
+            /// <summary>Message's target buffer.</summary>
+            public byte TargetBuffer { get; set; }
         }
     }
 }

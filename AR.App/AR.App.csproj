@@ -102,10 +102,31 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\AR.Commands.Generated\AR.Commands.Generated.csproj">
+      <Project>{150ffa54-4a3f-4fa6-9be2-a7984fd05f8e}</Project>
+      <Name>AR.Commands.Generated</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AR.Commands\AR.Commands.csproj">
+      <Project>{3dae880f-87cf-466e-8538-2fa29c062f69}</Project>
+      <Name>AR.Commands</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AR.Common\AR.Common.csproj">
+      <Project>{5db491d2-1b57-4830-bc33-787e51ad7014}</Project>
+      <Name>AR.Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AR.Device\AR.Device.csproj">
+      <Project>{28c30fcc-a028-48a8-8849-130ab0c81f96}</Project>
+      <Name>AR.Device</Name>
+    </ProjectReference>
     <ProjectReference Include="..\AR.Network\AR.Network.csproj">
       <Project>{3c26ae3c-c516-44c3-b4ad-20f462853654}</Project>
       <Name>AR.Network</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="DotSpatial.Positioning">
+      <Version>1.9.0</Version>
+    </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -19,36 +19,53 @@
 
 #endregion MIT License (c) 2018 Dan Brandt
 
-using AR.Drone;
+using AR.Device;
+using DotSpatial.Positioning;
 using System;
 using System.ComponentModel;
+using System.Windows.Input;
 
 namespace AR.App
 {
     /// <summary>View model for a drone.</summary>
     public class DroneViewModel : PropertyChangedBase, IDisposable
     {
-        public DroneViewModel(IARDrone drone)
+        public DroneViewModel(IARBebop drone)
         {
             Model = drone;
 
             Model.PropertyChanged += onModelChanged;
+            SetMaxDistance = new SetMaxDistanceCommand(Model);
         }
 
         /// <summary>The model this view model is wrapped around.</summary>
-        public IARDrone Model { get; private set; }
+        public IARBebop Model { get; private set; }
 
-        public float Altitude => Model.Altitude;
+        public ICommand SetMaxDistance { get; }
+
+        public float Altitude => (float)Model.Altitude.ToMeters().Value;
+
         public string HardwareVersion => Model.HardwareVersion;
+
+        public float MaxDistance => (float)Model.MaxDistanceFromHome.ToMeters().Value;
+
         public bool OutdoorWifi => Model.OutdoorWifi;
-        public float Pitch => Model.Pitch;
+
+        public float Pitch => (float)Model.Pitch.DecimalDegrees;
+
         public string ProductName => Model.ProductName;
-        public float Roll => Model.Roll;
+
+        public float Roll => (float)Model.Roll.DecimalDegrees;
+
         public TimeSpan RoundTripTime => Model.RoundTripTime;
+
         public short RssiInDbMilliWatts => Model.RssiInDbMilliWatts;
+
         public string SerialNumber => Model.SerialNumber;
+
         public string SoftwareVersion => Model.SoftwareVersion;
-        public float Yaw => Model.Yaw;
+
+        public float Yaw => (float)Model.Yaw.DecimalDegrees;
 
         /// <inheritdoc cref="IDisposable.Dispose" />
         public void Dispose()
@@ -75,7 +92,32 @@ namespace AR.App
                 case nameof(Model.RssiInDbMilliWatts): OnPropertyChanged(nameof(RssiInDbMilliWatts)); break;
                 case nameof(Model.SerialNumber): OnPropertyChanged(nameof(SerialNumber)); break;
                 case nameof(Model.SoftwareVersion): OnPropertyChanged(nameof(SoftwareVersion)); break;
+                case nameof(Model.MaxDistanceFromHome): OnPropertyChanged(nameof(MaxDistance)); break;
             }
+        }
+
+        private class SetMaxDistanceCommand : ICommand
+        {
+            public SetMaxDistanceCommand(IARBebop bebop)
+            {
+                _bebop = bebop;
+                _randomizer = new Random(2);
+            }
+
+            public event EventHandler CanExecuteChanged;
+
+            public bool CanExecute(object parameter)
+            {
+                return true;
+            }
+
+            public void Execute(object parameter)
+            {
+                _bebop.SetMaxDistance(Distance.FromMeters(50 + _randomizer.NextDouble() * 50));
+            }
+
+            private readonly IARBebop _bebop;
+            private readonly Random _randomizer;
         }
     }
 }

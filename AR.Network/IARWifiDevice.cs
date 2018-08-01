@@ -35,6 +35,6 @@ namespace AR.Network
         TimeSpan RoundTripTime { get; }
 
         /// <summary>Connect with drone at given address/port.</summary>
-        Task<string> Connect(IPAddress address, ushort port)
+        Task<string> Connect(IPAddress address, ushort port);
     }
 }

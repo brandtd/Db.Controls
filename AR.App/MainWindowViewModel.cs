@@ -19,12 +19,13 @@
 
 #endregion MIT License (c) 2018 Dan Brandt
 
-using AR.Drone;
+using AR.Commands;
+using AR.Commands.Common.SettingsState;
+using AR.Device;
+using AR.Network;
 using System;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Windows.Threading;
 
 namespace AR.App
 {
@@ -32,13 +33,14 @@ namespace AR.App
     {
         public MainWindowViewModel()
         {
-            _droneNetwork = new ARNetwork();
-            ((INotifyCollectionChanged)_droneNetwork.Drones).CollectionChanged += onDroneListChanged;
+            _codec = new ARCommandCodec();
+            _codec.RegisterCommands(typeof(ARCommand).Assembly);
+            _codec.RegisterCommands(typeof(CmdAllSettingsChanged).Assembly);
 
-            foreach (IARDrone drone in _droneNetwork.Drones)
-            {
-                Drones.Add(new DroneViewModel(drone));
-            }
+            _droneNetwork = new ARNetwork();
+            _droneNetwork.BebopDiscovered += onBebopDiscovered;
+            _droneNetwork.BebopLost += onBebopLost;
+            _droneNetwork.StartSearching();
         }
 
         public ObservableCollection<DroneViewModel> Drones { get; } = new ObservableCollection<DroneViewModel>();
@@ -48,39 +50,36 @@ namespace AR.App
         {
             if (_droneNetwork != null)
             {
-                ((INotifyCollectionChanged)_droneNetwork.Drones).CollectionChanged -= onDroneListChanged;
                 _droneNetwork.Dispose();
                 _droneNetwork = null;
             }
         }
 
+        private ARCommandCodec _codec;
         private ARNetwork _droneNetwork;
 
-        private void onDroneListChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private async void onBebopDiscovered(object sender, ARNetwork.ServiceDiscoveredArgs e)
         {
-            App.Current.Dispatcher.Invoke(() =>
+            ARBebop bebop = new ARBebop(_codec);
+            string error = await bebop.Connect(e.Address, e.Port);
+            if (string.IsNullOrEmpty(error))
             {
-                if (e.OldItems != null)
-                {
-                    foreach (IARDrone drone in e.OldItems.Cast<IARDrone>())
-                    {
-                        DroneViewModel viewModel = Drones.FirstOrDefault(vm => vm.Model == drone);
-                        if (viewModel != null)
-                        {
-                            Drones.Remove(viewModel);
-                            viewModel.Dispose();
-                        }
-                    }
-                }
+                Drones.Add(new DroneViewModel(bebop));
+            }
+        }
 
-                if (e.NewItems != null)
-                {
-                    foreach (IARDrone drone in e.NewItems.Cast<IARDrone>())
-                    {
-                        Drones.Add(new DroneViewModel(drone));
-                    }
-                }
-            });
+        private void onBebopLost(object sender, ARNetwork.ServiceLostArgs e)
+        {
+            DroneViewModel toRemove = null;
+            foreach (DroneViewModel drone in Drones)
+            {
+                toRemove = Drones.FirstOrDefault(d => d.Model.Address == e.Address);
+            }
+
+            if (toRemove != null)
+            {
+                Drones.Remove(toRemove);
+            }
         }
     }
 }

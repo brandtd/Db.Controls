@@ -53,7 +53,7 @@ namespace {{Namespace}}
     {{else if IsString}}
                 {
                     int count = Array.IndexOf<byte>(buffer, 0, index) - index;
-                    {{CamelCaseName}} = System.Text.Encoding.ASCII.GetString(buffer, index, buffer.Length - index);
+                    {{CamelCaseName}} = System.Text.Encoding.ASCII.GetString(buffer, index, count);
                 }
     {{else}}
                 {{CamelCaseName}} = ({{ClassType}})buffer[index];
@@ -70,7 +70,7 @@ namespace {{Namespace}}
         /// <inheritdoc cref="ARCommand.Encode" />
         public override bool Encode(byte[] buffer, ref int index)
         {
-            bool success = false;
+            bool success = true;
             int originalIndex = index;
 
             if (buffer.Length - index >= ARCommandSize)

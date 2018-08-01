@@ -20,7 +20,6 @@
 #endregion MIT License (c) 2018 Dan Brandt
 
 using AR.Commands;
-using ARParrot.Commands.Common.Settings;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -33,47 +32,98 @@ namespace AR.Network
 {
     public class ARNetwork : IDisposable
     {
+        /// <summary>
+        ///     Create the network listener, but don't start it, allowing for events to be wired into
+        ///     before the <see cref="StartSearching" /> method is called.
+        /// </summary>
         public ARNetwork()
         {
-            _codec = new ARCommandCodec();
-            _codec.RegisterCommands(Assembly.GetAssembly(typeof(ARCommand)));
-            _codec.RegisterCommands(Assembly.GetAssembly(typeof(CmdAllSettings)));
-
-            _listener = ZeroconfResolver.CreateListener(_serviceName);
-            _listener.ServiceFound += onServiceFound;
-            _listener.ServiceLost += onServiceLost;
-            _listener.Error += onServiceError;
-
-            /*ARBebop drone = new ARBebop(_codec);
-            drone.Connect(IPAddress.Parse("192.168.42.1"), 44444).ContinueWith(
-                t =>
-                {
-                    if (string.IsNullOrEmpty(t.Result))
-                    {
-                        Drones.Add(drone);
-                    }
-                }, TaskScheduler.FromCurrentSynchronizationContext());*/
         }
 
-        /// <summary>Discovered/connected drones.</summary>
-        public ObservableCollection<IARDrone> Drones { get; } = new ObservableCollection<IARDrone>();
+        /// <summary>Fired on discovering a new bebop device.</summary>
+        public event EventHandler<ServiceDiscoveredArgs> BebopDiscovered;
+
+        /// <summary>Fired on a bebop device leaving the network.</summary>
+        public event EventHandler<ServiceLostArgs> BebopLost;
 
         /// <inheritdoc cref="IDisposable.Dispose" />
         public void Dispose()
         {
             if (_listener != null)
             {
-                _listener.ServiceFound -= onServiceFound;
-                _listener.ServiceLost -= onServiceLost;
+                _listener.ServiceFound -= onBebopFound;
+                _listener.ServiceLost -= onBebopLost;
                 _listener.Error -= onServiceError;
                 _listener.Dispose();
                 _listener = null;
             }
         }
 
+        /// <summary>Start searching for drones.</summary>
+        public void StartSearching()
+        {
+            _listener = ZeroconfResolver.CreateListener(_serviceName);
+            _listener.ServiceFound += onBebopFound;
+            _listener.ServiceLost += onBebopLost;
+            _listener.Error += onServiceError;
+
+            BebopDiscovered?.Invoke(this, new ServiceDiscoveredArgs(IPAddress.Parse("192.168.42.1"), 44444));
+        }
+
+        /// <summary>Event type for a new network service getting discovered.</summary>
+        public class ServiceDiscoveredArgs : EventArgs
+        {
+            public ServiceDiscoveredArgs(IPAddress address, ushort port)
+            {
+                Address = address;
+                Port = port;
+            }
+
+            /// <summary>Service's address.</summary>
+            public IPAddress Address { get; }
+
+            /// <summary>Service's port.</summary>
+            public ushort Port { get; }
+        }
+
+        /// <summary>Event type for losing a network service.</summary>
+        public class ServiceLostArgs : EventArgs
+        {
+            public ServiceLostArgs(IPAddress address, ushort port)
+            {
+                Address = address;
+                Port = port;
+            }
+
+            /// <summary>Service's address.</summary>
+            public IPAddress Address { get; }
+
+            /// <summary>Service's port.</summary>
+            public ushort Port { get; }
+        }
+
         private const string _serviceName = "_arsdk-0901._udp.local.";
-        private ARCommandCodec _codec;
         private ZeroconfResolver.ResolverListener _listener;
+
+        private void onBebopFound(object sender, IZeroconfHost host)
+        {
+            Console.WriteLine($"Discovered Bebop: {host.IPAddress}");
+
+            IPAddress address = IPAddress.Parse(host.IPAddress);
+            int port = host.Services[_serviceName].Port;
+
+            BebopDiscovered?.Invoke(this, new ServiceDiscoveredArgs(address, (ushort)port));
+        }
+
+        private void onBebopLost(object sender, IZeroconfHost host)
+        {
+            Console.WriteLine($"Lost Bebop: {host.IPAddress}");
+
+            IPAddress address = IPAddress.Parse(host.IPAddress);
+            int port = host.Services[_serviceName].Port;
+
+            BebopLost?.Invoke(this, new ServiceLostArgs(address, (ushort)port));
+        }
 
         private void onServiceError(object sender, Exception e)
         {
@@ -81,39 +131,6 @@ namespace AR.Network
             if (Debugger.IsAttached)
             {
                 Debugger.Break();
-            }
-        }
-
-        private async void onServiceFound(object sender, IZeroconfHost host)
-        {
-            string address = host.IPAddress;
-            int port = host.Services[_serviceName].Port;
-            IPAddress addr = IPAddress.Parse(address);
-
-            if (Drones.FirstOrDefault(d => d.Address == addr) == null)
-            {
-                Console.WriteLine($"Discovered service: {address}:{port}");
-
-                ARBebop drone = new ARBebop(_codec);
-                string error = await drone.Connect(addr, (ushort)port);
-
-                if (string.IsNullOrEmpty(error))
-                {
-                    Drones.Add(drone);
-                }
-            }
-        }
-
-        private void onServiceLost(object sender, IZeroconfHost host)
-        {
-            Console.WriteLine($"Lost service: {host.IPAddress}");
-
-            IPAddress hostAddress = IPAddress.Parse(host.IPAddress);
-            IARDrone drone = Drones.FirstOrDefault(d => d.Address == hostAddress);
-            if (drone != null)
-            {
-                Drones.Remove(drone);
-                (drone as IDisposable)?.Dispose();
             }
         }
     }
