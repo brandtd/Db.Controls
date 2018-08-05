@@ -9,9 +9,6 @@
              x:Name="_this"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
-    <UserControl.Resources>
-        <BitmapImage x:Key="IndianHead" UriSource="/Resources/Indian_Head_Test_Image.JPG" />
-    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
