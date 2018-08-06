@@ -32,7 +32,7 @@
         </map:Map>
         <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="#7FFFFFFF"
                 Visibility="{Binding ElementName=_this, Path=ShowDescription, Converter={conv:BooleanToCollapsedVisibilityConverter}, FallbackValue=Visible}">
-            <TextBlock Margin="2" FontSize="10" map:HyperlinkText.InlinesSource="{Binding Layer.Description}" />
+            <TextBlock Margin="2" FontSize="10" map:HyperlinkText.InlinesSource="{Binding MapLayer.Description}" />
         </Border>
         <Grid Grid.Row="1" Grid.Column="1"
                 Visibility="{Binding ElementName=_this, Path=ShowExtras, Converter={conv:BooleanToCollapsedVisibilityConverter}, FallbackValue=Visible}">
