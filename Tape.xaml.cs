@@ -310,6 +310,11 @@ namespace Db.Controls
             ((Tape)d).setPendingCommandValue();
         }
 
+        private void _this_LostFocus(object sender, RoutedEventArgs e)
+        {
+            cancelPendingValueCommand();
+        }
+
         private void _this_MouseLeave(object sender, MouseEventArgs e)
         {
             cancelPendingValueCommand();
@@ -399,11 +404,6 @@ namespace Db.Controls
             {
                 PendingCommandValue = double.NaN;
             }
-        }
-
-        private void _this_LostFocus(object sender, RoutedEventArgs e)
-        {
-            cancelPendingValueCommand();
         }
     }
 }

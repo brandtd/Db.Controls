@@ -21,26 +21,19 @@
 
 using DotSpatial.Positioning;
 using MapControl;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Markup;
 
 namespace Db.Controls
 {
     /// <summary>Interaction logic for DraggableMapControl.xaml</summary>
-    [ContentProperty(nameof(AdditionalContent))]
-    public partial class DraggableMapControl : UserControl
+    public partial class DraggableMapControl : UserControl, INotifyPropertyChanged
     {
-        /// <summary>Additional content to draw on the map (e.g. a MapItemsControl).</summary>
-        public static readonly DependencyProperty AdditionalContentProperty =
-            DependencyProperty.Register(
-                nameof(AdditionalContent),
-                typeof(object),
-                typeof(DraggableMapControl),
-                new PropertyMetadata(null));
-
         /// <summary>
         ///     Command to execute on clicking the map. Will be passed a <see cref="Position" />
         ///     object describing the click location.
@@ -50,7 +43,7 @@ namespace Db.Controls
                 nameof(ClickCommand),
                 typeof(ICommand),
                 typeof(DraggableMapControl),
-                new PropertyMetadata(null));
+                new FrameworkPropertyMetadata(null, onPropertyChanged));
 
         /// <summary>Name of the map layer currently being used.</summary>
         public static readonly DependencyProperty LayerNameProperty =
@@ -58,7 +51,10 @@ namespace Db.Controls
                 nameof(LayerName),
                 typeof(string),
                 typeof(DraggableMapControl),
-                new PropertyMetadata(""));
+                new FrameworkPropertyMetadata(
+                    "",
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    onPropertyChanged));
 
         /// <summary>Available layers.</summary>
         public static readonly DependencyProperty LayerNamesProperty =
@@ -66,7 +62,10 @@ namespace Db.Controls
                 nameof(LayerNames),
                 typeof(IEnumerable),
                 typeof(DraggableMapControl),
-                new PropertyMetadata(null));
+                new FrameworkPropertyMetadata(
+                    null,
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    onPropertyChanged));
 
         /// <summary>Center position of the map.</summary>
         public static readonly DependencyProperty MapCenterProperty =
@@ -74,7 +73,21 @@ namespace Db.Controls
                 nameof(MapCenter),
                 typeof(Position),
                 typeof(DraggableMapControl),
-                new PropertyMetadata(Position.Invalid));
+                new FrameworkPropertyMetadata(
+                    Position.Invalid,
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    onPropertyChanged));
+
+        /// <summary>Items to display in map.</summary>
+        public static readonly DependencyProperty MapItemsProperty =
+            DependencyProperty.Register(
+                nameof(MapItems),
+                typeof(IEnumerable<UIElement>),
+                typeof(DraggableMapControl),
+                new FrameworkPropertyMetadata(
+                    null,
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    onPropertyChanged));
 
         /// <summary>The actual map layer currently being used.</summary>
         public static readonly DependencyProperty MapLayerProperty =
@@ -82,7 +95,10 @@ namespace Db.Controls
                 nameof(MapLayer),
                 typeof(UIElement),
                 typeof(DraggableMapControl),
-                new PropertyMetadata(null));
+                new FrameworkPropertyMetadata(
+                    null,
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    onPropertyChanged));
 
         /// <summary>Location of the mouse as a geographic <see cref="Position" />.</summary>
         public static readonly DependencyProperty MouseLocationProperty =
@@ -90,7 +106,10 @@ namespace Db.Controls
                 nameof(MouseLocation),
                 typeof(Position),
                 typeof(DraggableMapControl),
-                new PropertyMetadata(Position.Invalid));
+                new FrameworkPropertyMetadata(
+                    Position.Invalid,
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    onPropertyChanged));
 
         /// <summary>Whether the map description (layer name and source) should be shown.</summary>
         public static readonly DependencyProperty ShowDescriptionProperty =
@@ -98,7 +117,12 @@ namespace Db.Controls
                 nameof(ShowDescription),
                 typeof(bool),
                 typeof(DraggableMapControl),
-                new PropertyMetadata(false));
+                new FrameworkPropertyMetadata(
+                    false,
+                    FrameworkPropertyMetadataOptions.AffectsMeasure |
+                    FrameworkPropertyMetadataOptions.AffectsArrange |
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    onPropertyChanged));
 
         /// <summary>Whether the zoom level and mouse location should be displayed.</summary>
         public static readonly DependencyProperty ShowExtrasProperty =
@@ -106,7 +130,12 @@ namespace Db.Controls
                 nameof(ShowExtras),
                 typeof(bool),
                 typeof(DraggableMapControl),
-                new PropertyMetadata(false));
+                new FrameworkPropertyMetadata(
+                    false,
+                    FrameworkPropertyMetadataOptions.AffectsMeasure |
+                    FrameworkPropertyMetadataOptions.AffectsArrange |
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    onPropertyChanged));
 
         /// <summary>Map's current zoom level.</summary>
         public static readonly DependencyProperty ZoomLevelProperty =
@@ -114,19 +143,17 @@ namespace Db.Controls
                 nameof(ZoomLevel),
                 typeof(double),
                 typeof(DraggableMapControl),
-                new PropertyMetadata(1.0));
+                new FrameworkPropertyMetadata(
+                    1.0,
+                    FrameworkPropertyMetadataOptions.AffectsRender,
+                    onPropertyChanged));
 
         public DraggableMapControl()
         {
             InitializeComponent();
         }
 
-        /// <inheritdoc cref="AdditionalContentProperty" />
-        public object AdditionalContent
-        {
-            get => GetValue(AdditionalContentProperty);
-            set => SetValue(AdditionalContentProperty, value);
-        }
+        public event PropertyChangedEventHandler PropertyChanged;
 
         /// <inheritdoc cref="ClickCommandProperty" />
         public ICommand ClickCommand
@@ -154,6 +181,13 @@ namespace Db.Controls
         {
             get => (Position)GetValue(MapCenterProperty);
             set => SetValue(MapCenterProperty, value);
+        }
+
+        /// <inheritdoc cref="MapItemsProperty" />
+        public IEnumerable<UIElement> MapItems
+        {
+            get => (IEnumerable<UIElement>)GetValue(MapItemsProperty);
+            set => SetValue(MapItemsProperty, value);
         }
 
         /// <inheritdoc cref="MapLayerProperty" />
@@ -191,6 +225,14 @@ namespace Db.Controls
             set => SetValue(ZoomLevelProperty, value);
         }
 
+        private static void onPropertyChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (sender is DraggableMapControl dmc)
+            {
+                dmc.PropertyChanged?.Invoke(dmc, new PropertyChangedEventArgs(e.Property.Name));
+            }
+        }
+
         private void mapItemTouchDown(object sender, TouchEventArgs e)
         {
             if (sender is MapItem mapItem)
@@ -214,7 +256,7 @@ namespace Db.Controls
         {
             if (e.ClickCount == 2)
             {
-                map.TargetCenter = map.ViewportPointToLocation(e.GetPosition(this));
+                //map.TargetCenter = map.ViewportPointToLocation(e.GetPosition(this));
             }
         }
 
@@ -228,7 +270,7 @@ namespace Db.Controls
         {
             if (e.ClickCount == 2)
             {
-                //map.ZoomMap(e.GetPosition(map), Math.Ceiling(map.ZoomLevel - 1.5));
+                map.ZoomMap(e.GetPosition(map), Math.Ceiling(map.ZoomLevel - 1.5));
             }
         }
 
